@@ -5,143 +5,477 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Apple Music Style Player</title>
 <style>
-  body {
+  /* Reset & base */
+  * {
+    box-sizing: border-box;
+    margin: 0; padding: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
       Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-    background: #fff;
-    color: #000;
-    margin: 0;
+  }
+  body, html {
+    height: 100%;
+    background: #121212;
+    color: white;
+    overflow: hidden;
+  }
+
+  /* Layout grid: sidebar + main + bottom player */
+  .container {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    grid-template-rows: 1fr 90px;
+    height: 100vh;
+  }
+  .sidebar {
+    background: #181818;
     padding: 20px;
+    display: flex;
+    flex-direction: column;
   }
-  .player {
-    max-width: 400px;
-    margin: 0 auto;
+  .sidebar h1 {
+    font-weight: 900;
+    font-size: 28px;
+    margin-bottom: 30px;
+    letter-spacing: 2px;
   }
-  .artwork {
-    width: 100%;
-    border-radius: 8px;
-    margin-bottom: 15px;
-  }
-  .song-title {
-    font-weight: 600;
-    font-size: 1.2rem;
-    margin-bottom: 4px;
-  }
-  .artist-name {
-    font-weight: 400;
-    color: #666;
-    margin-bottom: 15px;
-  }
-  audio {
-    width: 100%;
-    outline: none;
-  }
-  ul.song-list {
-    list-style: none;
-    padding: 0;
-    margin-top: 30px;
-    max-height: 300px;
+  .playlist-list {
+    flex-grow: 1;
     overflow-y: auto;
   }
-  ul.song-list li {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
+  .playlist-item {
+    padding: 10px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .playlist-item:hover, .playlist-item.active {
+    background: #333;
+  }
+  .playlist-item img {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    object-fit: cover;
+  }
+  .playlist-item span {
+    flex-grow: 1;
+    font-weight: 500;
+  }
+
+  .main {
+    background: #121212;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    overflow: hidden;
+  }
+  .now-playing-info {
+    display: flex;
+    gap: 25px;
+    align-items: center;
+    margin-bottom: 25px;
+  }
+  .now-playing-artwork {
+    width: 160px;
+    height: 160px;
+    border-radius: 12px;
+    background: #222;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .now-playing-artwork img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .track-details {
+    flex-grow: 1;
+  }
+  .track-details h2 {
+    font-weight: 700;
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+  .track-details p {
+    color: #b3b3b3;
+    font-size: 16px;
+  }
+
+  .track-list {
+    overflow-y: auto;
+    flex-grow: 1;
+  }
+  .track-list table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .track-list thead {
+    border-bottom: 1px solid #333;
+  }
+  .track-list th, .track-list td {
+    padding: 12px 10px;
+    text-align: left;
+    font-size: 14px;
+  }
+  .track-list tr {
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .track-list tr:hover, .track-list tr.active {
+    background: #222;
+  }
+  .track-list td.duration {
+    text-align: right;
+    color: #999;
+  }
+
+  /* Bottom player controls */
+  .player-controls {
+    grid-column: 1 / 3;
+    background: #181818;
+    display: flex;
+    align-items: center;
+    padding: 0 25px;
+    gap: 20px;
+  }
+  .player-controls button {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 22px;
+    transition: color 0.2s;
+  }
+  .player-controls button:hover {
+    color: #1db954;
+  }
+  .player-controls .play-pause {
+    font-size: 28px;
+  }
+  .player-progress {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #333;
+    border-radius: 3px;
+    overflow: hidden;
     cursor: pointer;
   }
-  ul.song-list li:hover {
-    background: #f0f0f0;
+  .progress-bar > div {
+    height: 100%;
+    background: #1db954;
+    width: 0%;
   }
-  ul.song-list li.active {
-    background: #e0e0e0;
-    font-weight: 600;
+  .time-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #888;
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+  }
+  .volume-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .volume-control input[type=range] {
+    -webkit-appearance: none;
+    width: 100px;
+    background: transparent;
+  }
+  .volume-control input[type=range]:focus {
+    outline: none;
+  }
+  .volume-control input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 14px;
+    width: 14px;
+    background: #1db954;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: -5px;
+  }
+  .volume-control input[type=range]::-webkit-slider-runnable-track {
+    height: 4px;
+    background: #555;
+    border-radius: 2px;
+  }
+
+  /* Scrollbar style */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #121212;
   }
 </style>
 </head>
 <body>
-<div class="player">
-  <img id="artwork" class="artwork" src="" alt="Artwork" />
-  <div class="song-title" id="title">Loading...</div>
-  <div class="artist-name" id="artist"></div>
-  <audio id="audio" controls></audio>
-  <ul id="songList" class="song-list"></ul>
+
+<div class="container">
+  <nav class="sidebar">
+    <h1>My Music</h1>
+    <div class="playlist-list" id="playlistList">
+      <!-- Playlist items get inserted here -->
+    </div>
+  </nav>
+
+  <main class="main">
+    <section class="now-playing-info">
+      <div class="now-playing-artwork" id="nowPlayingArtwork">
+        <img src="" alt="Album Art" id="nowPlayingImg" />
+      </div>
+      <div class="track-details">
+        <h2 id="nowPlayingTitle">Select a song</h2>
+        <p id="nowPlayingArtist">...</p>
+      </div>
+    </section>
+
+    <section class="track-list" id="trackListContainer">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Title</th>
+            <th>Duration</th>
+          </tr>
+        </thead>
+        <tbody id="trackList">
+          <!-- Tracks go here -->
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer class="player-controls">
+    <button id="prevBtn" title="Previous">&#9664;&#9664;</button>
+    <button id="playPauseBtn" class="play-pause" title="Play/Pause">&#9654;</button>
+    <button id="nextBtn" title="Next">&#9654;&#9654;</button>
+
+    <div class="player-progress" id="progressContainer">
+      <div class="progress-bar" id="progressBar">
+        <div></div>
+      </div>
+      <div class="time-labels">
+        <span id="currentTime">0:00</span>
+        <span id="duration">0:00</span>
+      </div>
+    </div>
+
+    <div class="volume-control">
+      <label for="volumeRange" style="color:#bbb;">Vol</label>
+      <input type="range" id="volumeRange" min="0" max="1" step="0.01" value="0.7" />
+    </div>
+  </footer>
 </div>
 
 <script>
-  const JSON_URL = 'https://raw.githubusercontent.com/bobobo1343/APPLEMUSICSONGSJSON/refs/heads/main/songs.json';
-  const FALLBACK_ARTWORK = 'https://is3-ssl.mzstatic.com/image/thumb/Music126/v4/43/29/3c/43293c1a-83e1-43f7-4f4d-3b22a0956aeb/source/100x100bb.jpg';
+  // Your songs JSON URL (replace with your actual raw GitHub URL)
+  const SONGS_JSON_URL = "https://raw.githubusercontent.com/bobobo1343/APPLEMUSICSONGSJSON/main/songs.json";
 
-  const artworkEl = document.getElementById('artwork');
-  const titleEl = document.getElementById('title');
-  const artistEl = document.getElementById('artist');
-  const audioEl = document.getElementById('audio');
-  const songListEl = document.getElementById('songList');
+  // Default artwork if none present
+  const DEFAULT_ARTWORK = 'default_artwork.jpg'; // Make sure to upload this image alongside your HTML
 
   let songs = [];
-  let currentIndex = 0;
+  let currentIndex = -1;
+  let isPlaying = false;
 
-  // Convert Google Drive share URL to direct download URL
+  // HTML Elements
+  const playlistList = document.getElementById('playlistList');
+  const nowPlayingImg = document.getElementById('nowPlayingImg');
+  const nowPlayingTitle = document.getElementById('nowPlayingTitle');
+  const nowPlayingArtist = document.getElementById('nowPlayingArtist');
+  const trackList = document.getElementById('trackList');
+  const playPauseBtn = document.getElementById('playPauseBtn');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const currentTimeEl = document.getElementById('currentTime');
+  const durationEl = document.getElementById('duration');
+  const progressBar = document.getElementById('progressBar').firstElementChild;
+  const progressContainer = document.getElementById('progressContainer');
+  const volumeRange = document.getElementById('volumeRange');
+
+  // Create audio element
+  const audio = new Audio();
+  audio.volume = volumeRange.value;
+
+  // Convert Google Drive URLs to direct playable links
   function convertDriveUrlToDirect(url) {
-    const regex = /\/d\/([a-zA-Z0-9_-]+)/;
-    const match = url.match(regex);
-    if (match && match[1]) {
-      return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+    if (!url) return null;
+    // Support "webContentLink" or "webViewLink"
+    // webContentLink: https://drive.google.com/uc?id=FILEID&export=download
+    // webViewLink: https://drive.google.com/file/d/FILEID/view?usp=sharing
+    let match = url.match(/[-\w]{25,}/);
+    if (match) {
+      return `https://drive.google.com/uc?export=download&id=${match[0]}`;
     }
     return url;
   }
 
-  function loadSong(index) {
-    const song = songs[index];
-    if (!song) return;
+  // Format seconds to mm:ss
+  function formatTime(sec) {
+    const minutes = Math.floor(sec / 60);
+    const seconds = Math.floor(sec % 60);
+    return minutes + ':' + (seconds < 10 ? '0' + seconds : seconds);
+  }
 
-    titleEl.textContent = song.title || 'Unknown Title';
-    artistEl.textContent = song.artist || 'Unknown Artist';
-    artworkEl.src = song.artwork || FALLBACK_ARTWORK;
+  // Load songs JSON
+  async function loadSongs() {
+    try {
+      const res = await fetch(SONGS_JSON_URL);
+      songs = await res.json();
+      renderPlaylist();
+      renderTrackList();
+    } catch (err) {
+      alert('Failed to load songs JSON');
+      console.error(err);
+    }
+  }
 
-    audioEl.src = convertDriveUrlToDirect(song.url);
-    audioEl.load();
+  // Render sidebar playlist (albums or just list)
+  function renderPlaylist() {
+    // For simplicity just one playlist: all songs as "My Playlist"
+    playlistList.innerHTML = '';
+    const plItem = document.createElement('div');
+    plItem.classList.add('playlist-item', 'active');
+    plItem.innerHTML = `<img src="${DEFAULT_ARTWORK}" alt="Playlist" />
+      <span>My Playlist</span>`;
+    playlistList.appendChild(plItem);
+  }
 
-    // Highlight active song
-    [...songListEl.children].forEach((li, i) => {
-      li.classList.toggle('active', i === index);
+  // Render track list table
+  function renderTrackList() {
+    trackList.innerHTML = '';
+    songs.forEach((song, i) => {
+      const tr = document.createElement('tr');
+      tr.dataset.index = i;
+      if (i === currentIndex) tr.classList.add('active');
+      tr.innerHTML = `
+        <td>${i + 1}</td>
+        <td>${song.name || 'Unknown Title'}</td>
+        <td class="duration">${song.duration || '--:--'}</td>
+      `;
+      tr.onclick = () => playSong(i);
+      trackList.appendChild(tr);
     });
+  }
+
+  // Play selected song
+  function playSong(index) {
+    if (index < 0 || index >= songs.length) return;
 
     currentIndex = index;
-  }
+    const song = songs[index];
 
-  function createSongList() {
-    songs.forEach((song, index) => {
-      const li = document.createElement('li');
-      li.textContent = `${song.title} - ${song.artist}`;
-      li.addEventListener('click', () => {
-        loadSong(index);
-        audioEl.play();
-      });
-      songListEl.appendChild(li);
+    audio.src = convertDriveUrlToDirect(song.webContentLink) || '';
+    audio.load();
+
+    nowPlayingTitle.textContent = song.name || 'Unknown Title';
+    nowPlayingArtist.textContent = song.artist || '';
+    nowPlayingImg.src = song.thumbnailLink || DEFAULT_ARTWORK;
+    nowPlayingImg.onerror = () => { nowPlayingImg.src = DEFAULT_ARTWORK; };
+
+    updateActiveTrack();
+    audio.play().then(() => {
+      isPlaying = true;
+      playPauseBtn.innerHTML = '&#10073;&#10073;'; // pause icon
+    }).catch(e => {
+      console.warn('Playback failed, user interaction needed.');
     });
   }
 
-  // Load songs JSON and initialize player
-  fetch(JSON_URL)
-    .then(res => res.json())
-    .then(data => {
-      // Expecting an array of {title, artist, url, artwork}
-      songs = data;
+  // Update active track row highlight
+  function updateActiveTrack() {
+    const trs = trackList.querySelectorAll('tr');
+    trs.forEach(tr => tr.classList.remove('active'));
+    const activeRow = trackList.querySelector(`tr[data-index="${currentIndex}"]`);
+    if (activeRow) activeRow.classList.add('active');
+  }
 
-      createSongList();
-      loadSong(0);
-    })
-    .catch(() => {
-      titleEl.textContent = 'Failed to load songs.';
-    });
-
-  // Prevent autoplay error: only play after user interaction
-  document.body.addEventListener('click', () => {
-    if (audioEl.paused && audioEl.src) {
-      audioEl.play().catch(() => {
-        // Ignore play errors if any
+  // Play or pause toggle
+  function togglePlayPause() {
+    if (isPlaying) {
+      audio.pause();
+      playPauseBtn.innerHTML = '&#9654;'; // play icon
+    } else {
+      audio.play().catch(() => {
+        console.warn('Playback failed, user interaction needed.');
       });
+      playPauseBtn.innerHTML = '&#10073;&#10073;'; // pause icon
     }
-  }, { once: true });
+    isPlaying = !isPlaying;
+  }
+
+  // Play previous track
+  function playPrev() {
+    if (currentIndex > 0) {
+      playSong(currentIndex - 1);
+    } else {
+      playSong(songs.length - 1);
+    }
+  }
+
+  // Play next track
+  function playNext() {
+    if (currentIndex < songs.length - 1) {
+      playSong(currentIndex + 1);
+    } else {
+      playSong(0);
+    }
+  }
+
+  // Update progress bar and timer
+  audio.ontimeupdate = () => {
+    if (audio.duration) {
+      const percent = (audio.currentTime / audio.duration) * 100;
+      progressBar.style.width = percent + '%';
+      currentTimeEl.textContent = formatTime(audio.currentTime);
+      durationEl.textContent = formatTime(audio.duration);
+    }
+  };
+
+  // Seek on progress bar click
+  progressContainer.onclick = (e) => {
+    const rect = progressContainer.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const width = rect.width;
+    const seekTime = (clickX / width) * audio.duration;
+    audio.currentTime = seekTime;
+  };
+
+  // Volume control
+  volumeRange.oninput = () => {
+    audio.volume = volumeRange.value;
+  };
+
+  // Auto next on track end
+  audio.onended = () => {
+    playNext();
+  };
+
+  // Attach controls events
+  playPauseBtn.onclick = togglePlayPause;
+  prevBtn.onclick = playPrev;
+  nextBtn.onclick = playNext;
+
+  // Initial load
+  loadSongs();
+
 </script>
 </body>
 </html>
