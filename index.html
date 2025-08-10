@@ -1,240 +1,147 @@
 <!DOCTYPE html>
-<html lang="en" >
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Apple Music Style Player</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;600&display=swap');
-
-    /* Apple system font fallback */
-    body {
-      margin: 0; padding: 0; background: #fff; color: #1c1c1e;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .player {
-      width: 380px;
-      background: #fff;
-      box-shadow: 0 0 30px rgba(0,0,0,0.1);
-      border-radius: 28px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      user-select: none;
-    }
-
-    .header {
-      padding: 24px 28px 20px 28px;
-      border-bottom: 1px solid #e5e5ea;
-      font-weight: 600;
-      font-size: 22px;
-      color: #000;
-      letter-spacing: 0.02em;
-    }
-
-    .playlist {
-      flex: 1;
-      overflow-y: auto;
-      padding: 0 16px;
-      scroll-behavior: smooth;
-    }
-
-    .song {
-      display: flex;
-      align-items: center;
-      padding: 12px 12px;
-      cursor: pointer;
-      border-radius: 14px;
-      transition: background-color 0.25s ease;
-    }
-    .song:hover {
-      background-color: #f2f2f7;
-    }
-    .song.active {
-      background-color: #d0d0d7;
-    }
-
-    .artwork {
-      width: 54px;
-      height: 54px;
-      border-radius: 10px;
-      object-fit: cover;
-      flex-shrink: 0;
-      margin-right: 16px;
-      background: #eee;
-    }
-
-    .song-info {
-      flex-grow: 1;
-      overflow: hidden;
-    }
-    .song-title {
-      font-weight: 600;
-      font-size: 17px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      color: #000;
-    }
-    .song-artist {
-      font-size: 14px;
-      color: #636366;
-      margin-top: 2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .player-footer {
-      border-top: 1px solid #e5e5ea;
-      padding: 20px 28px;
-      display: flex;
-      align-items: center;
-    }
-
-    .footer-artwork {
-      width: 60px;
-      height: 60px;
-      border-radius: 12px;
-      object-fit: cover;
-      background: #eee;
-      margin-right: 16px;
-      flex-shrink: 0;
-    }
-
-    .footer-info {
-      flex-grow: 1;
-      overflow: hidden;
-    }
-    .footer-title {
-      font-weight: 600;
-      font-size: 18px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      color: #000;
-    }
-    .footer-artist {
-      font-size: 15px;
-      color: #636366;
-      margin-top: 4px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    audio {
-      width: 100%;
-      margin-top: 10px;
-      outline: none;
-    }
-
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Apple Music Style Player</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+      Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    background: #fff;
+    color: #000;
+    margin: 0;
+    padding: 20px;
+  }
+  .player {
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  .artwork {
+    width: 100%;
+    border-radius: 8px;
+    margin-bottom: 15px;
+  }
+  .song-title {
+    font-weight: 600;
+    font-size: 1.2rem;
+    margin-bottom: 4px;
+  }
+  .artist-name {
+    font-weight: 400;
+    color: #666;
+    margin-bottom: 15px;
+  }
+  audio {
+    width: 100%;
+    outline: none;
+  }
+  ul.song-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 30px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  ul.song-list li {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+  }
+  ul.song-list li:hover {
+    background: #f0f0f0;
+  }
+  ul.song-list li.active {
+    background: #e0e0e0;
+    font-weight: 600;
+  }
+</style>
 </head>
 <body>
-
-  <div class="player" role="region" aria-label="Music player">
-    <div class="header">My Music</div>
-    <div class="playlist" id="playlist"></div>
-    <div class="player-footer" id="footer">
-      <img class="footer-artwork" id="footerArtwork" src="" alt="Current song artwork" />
-      <div class="footer-info">
-        <div class="footer-title" id="footerTitle">Select a song</div>
-        <div class="footer-artist" id="footerArtist"></div>
-      </div>
-    </div>
-    <audio controls id="audio" preload="metadata" aria-label="Audio player"></audio>
-  </div>
+<div class="player">
+  <img id="artwork" class="artwork" src="" alt="Artwork" />
+  <div class="song-title" id="title">Loading...</div>
+  <div class="artist-name" id="artist"></div>
+  <audio id="audio" controls></audio>
+  <ul id="songList" class="song-list"></ul>
+</div>
 
 <script>
-  const playlistEl = document.getElementById('playlist');
-  const audioEl = document.getElementById('audio');
-  const footerArtwork = document.getElementById('footerArtwork');
-  const footerTitle = document.getElementById('footerTitle');
-  const footerArtist = document.getElementById('footerArtist');
+  const JSON_URL = 'https://raw.githubusercontent.com/bobobo1343/APPLEMUSICSONGSJSON/refs/heads/main/songs.json';
+  const FALLBACK_ARTWORK = 'https://is3-ssl.mzstatic.com/image/thumb/Music126/v4/43/29/3c/43293c1a-83e1-43f7-4f4d-3b22a0956aeb/source/100x100bb.jpg';
 
-  const songsUrl = 'https://raw.githubusercontent.com/bobobo1343/APPLEMUSICSONGSJSON/refs/heads/main/songs.json';
+  const artworkEl = document.getElementById('artwork');
+  const titleEl = document.getElementById('title');
+  const artistEl = document.getElementById('artist');
+  const audioEl = document.getElementById('audio');
+  const songListEl = document.getElementById('songList');
 
   let songs = [];
-  let currentIndex = -1;
+  let currentIndex = 0;
 
-  fetch(songsUrl)
-    .then(res => res.json())
-    .then(data => {
-      songs = data.songs || data; // adapt if your json has a "songs" array
-      renderPlaylist();
-      if (songs.length > 0) {
-        selectSong(0);
-      }
-    })
-    .catch(err => {
-      playlistEl.innerHTML = '<p style="padding: 20px; color: red;">Failed to load songs.</p>';
-      console.error(err);
-    });
-
-  function renderPlaylist() {
-    playlistEl.innerHTML = '';
-    songs.forEach((song, i) => {
-      const songEl = document.createElement('div');
-      songEl.className = 'song';
-      songEl.dataset.index = i;
-
-      // Safe fallback artwork
-      const artwork = song.artwork || 'https://is3-ssl.mzstatic.com/image/thumb/Music126/v4/43/29/3c/43293c1a-83e1-43f7-4f4d-3b22a0956aeb/source/100x100bb.jpg';
-
-      songEl.innerHTML = `
-        <img class="artwork" src="${artwork}" alt="Artwork for ${song.title || song.name}" />
-        <div class="song-info">
-          <div class="song-title">${song.title || song.name || 'Untitled'}</div>
-          <div class="song-artist">${song.artist || 'Unknown Artist'}</div>
-        </div>
-      `;
-
-      songEl.addEventListener('click', () => {
-        selectSong(i);
-      });
-
-      playlistEl.appendChild(songEl);
-    });
+  // Convert Google Drive share URL to direct download URL
+  function convertDriveUrlToDirect(url) {
+    const regex = /\/d\/([a-zA-Z0-9_-]+)/;
+    const match = url.match(regex);
+    if (match && match[1]) {
+      return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+    }
+    return url;
   }
 
-  function selectSong(index) {
-    if (index === currentIndex) return; // no change
-
-    currentIndex = index;
+  function loadSong(index) {
     const song = songs[index];
     if (!song) return;
 
-    // Update active styling
-    Array.from(playlistEl.children).forEach((el, i) => {
-      el.classList.toggle('active', i === index);
+    titleEl.textContent = song.title || 'Unknown Title';
+    artistEl.textContent = song.artist || 'Unknown Artist';
+    artworkEl.src = song.artwork || FALLBACK_ARTWORK;
+
+    audioEl.src = convertDriveUrlToDirect(song.url);
+    audioEl.load();
+
+    // Highlight active song
+    [...songListEl.children].forEach((li, i) => {
+      li.classList.toggle('active', i === index);
     });
 
-    // Update footer info
-    footerArtwork.src = song.artwork || 'https://is3-ssl.mzstatic.com/image/thumb/Music126/v4/43/29/3c/43293c1a-83e1-43f7-4f4d-3b22a0956aeb/source/100x100bb.jpg';
-    footerArtwork.alt = `Artwork for ${song.title || song.name}`;
-    footerTitle.textContent = song.title || song.name || 'Untitled';
-    footerArtist.textContent = song.artist || 'Unknown Artist';
-
-    // Set audio source (try various keys)
-    audioEl.src = song.audio || song.url || song.webContentLink || '';
-    audioEl.play().catch(e => console.warn('Playback error', e));
+    currentIndex = index;
   }
 
-  // Optional: auto play next song on ended
-  audioEl.addEventListener('ended', () => {
-    let nextIndex = currentIndex + 1;
-    if (nextIndex >= songs.length) nextIndex = 0;
-    selectSong(nextIndex);
-  });
-</script>
+  function createSongList() {
+    songs.forEach((song, index) => {
+      const li = document.createElement('li');
+      li.textContent = `${song.title} - ${song.artist}`;
+      li.addEventListener('click', () => {
+        loadSong(index);
+        audioEl.play();
+      });
+      songListEl.appendChild(li);
+    });
+  }
 
+  // Load songs JSON and initialize player
+  fetch(JSON_URL)
+    .then(res => res.json())
+    .then(data => {
+      // Expecting an array of {title, artist, url, artwork}
+      songs = data;
+
+      createSongList();
+      loadSong(0);
+    })
+    .catch(() => {
+      titleEl.textContent = 'Failed to load songs.';
+    });
+
+  // Prevent autoplay error: only play after user interaction
+  document.body.addEventListener('click', () => {
+    if (audioEl.paused && audioEl.src) {
+      audioEl.play().catch(() => {
+        // Ignore play errors if any
+      });
+    }
+  }, { once: true });
+</script>
 </body>
 </html>
