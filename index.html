@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Google Drive Music Player</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #121212;
+    color: #fff;
+    margin: 0; padding: 0;
+    display: flex; flex-direction: column; height: 100vh;
+  }
+  header {
+    padding: 1rem; background: #1db954; font-weight: bold; font-size: 1.5rem;
+    text-align: center;
+  }
+  #tracklist {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    background: #282828;
+  }
+  #tracklist div {
+    padding: 0.5rem;
+    cursor: pointer;
+    border-bottom: 1px solid #3e3e3e;
+  }
+  #tracklist div:hover, #tracklist .active {
+    background: #1db954;
+  }
+  #player {
+    background: #181818;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  #player button {
+    background: none;
+    border: none;
+    color: #1db954;
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<header>Google Drive Music Player</header>
+
+<div id="tracklist">Loading tracks...</div>
+
+<div id="player">
+  <button id="prevBtn">⏮️</button>
+  <button id="playPauseBtn">▶️</button>
+  <button id="nextBtn">⏭️</button>
+  <button id="shuffleBtn">🔀</button>
+  <div id="nowPlaying">Not playing</div>
+</div>
+
+<audio id="audio"></audio>
+
+<script>
+  const folderId = '1DGz9zEQh29EAqTZpmWK5mwSj5HComnkn'; // Your folder ID
+  const apiKey = 'AIzaSyDsYE91wH7UDwu8eZNbD1CFuVcilgYeZhI'; // Your API key
+
+  const audio = document.getElementById('audio');
+  const tracklistDiv = document.getElementById('tracklist');
+  const nowPlaying = document.getElementById('nowPlaying');
+  const playPauseBtn = document.getElementById('playPauseBtn');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const shuffleBtn = document.getElementById('shuffleBtn');
+
+  let tracks = [];
+  let currentTrackIndex = 0;
+  let isPlaying = false;
+  let isShuffle = false;
+
+  async function loadTracks() {
+    let allTracks = [];
+    let pageToken = '';
+
+    try {
+      do {
+        const q = `'${folderId}' in parents and (mimeType contains 'audio/')`;
+        let url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=nextPageToken,files(id,name)&pageSize=100&key=${apiKey}`;
+        if (pageToken) url += `&pageToken=${pageToken}`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.files) allTracks = allTracks.concat(data.files);
+        pageToken = data.nextPageToken;
+      } while (pageToken);
+
+      tracks = allTracks.sort((a,b) => a.name.localeCompare(b.name));
+      renderTrackList();
+      loadTrack(0);
+    } catch (e) {
+      tracklistDiv.textContent = 'Failed to load tracks.';
+      console.error(e);
+    }
+  }
+
+  function renderTrackList() {
+    tracklistDiv.innerHTML = '';
+    tracks.forEach((track, idx) => {
+      const div = document.createElement('div');
+      div.textContent = track.name;
+      div.onclick = () => {
+        loadTrack(idx);
+        playTrack();
+      };
+      if (idx === currentTrackIndex) div.classList.add('active');
+      tracklistDiv.appendChild(div);
+    });
+  }
+
+  function loadTrack(index) {
+    if (index < 0 || index >= tracks.length) return;
+    currentTrackIndex = index;
+    const track = tracks[index];
+    audio.src = `https://www.googleapis.com/drive/v3/files/${track.id}?alt=media&key=${apiKey}`;
+    nowPlaying.textContent = `Playing: ${track.name}`;
+    highlightActiveTrack();
+  }
+
+  function highlightActiveTrack() {
+    Array.from(tracklistDiv.children).forEach((child, idx) => {
+      child.classList.toggle('active', idx === currentTrackIndex);
+    });
+  }
+
+  function playTrack() {
+    audio.play();
+    isPlaying = true;
+    playPauseBtn.textContent = '⏸️';
+  }
+
+  function pauseTrack() {
+    audio.pause();
+    isPlaying = false;
+    playPauseBtn.textContent = '▶️';
+  }
+
+  function togglePlayPause() {
+    if (isPlaying) pauseTrack();
+    else playTrack();
+  }
+
+  function playNext() {
+    if (isShuffle) {
+      currentTrackIndex = Math.floor(Math.random() * tracks.length);
+    } else {
+      currentTrackIndex = (currentTrackIndex + 1) % tracks.length;
+    }
+    loadTrack(currentTrackIndex);
+    playTrack();
+  }
+
+  function playPrev() {
+    if (isShuffle) {
+      currentTrackIndex = Math.floor(Math.random() * tracks.length);
+    } else {
+      currentTrackIndex = (currentTrackIndex - 1 + tracks.length) % tracks.length;
+    }
+    loadTrack(currentTrackIndex);
+    playTrack();
+  }
+
+  function toggleShuffle() {
+    isShuffle = !isShuffle;
+    shuffleBtn.style.color = isShuffle ? '#1db954' : '#fff';
+  }
+
+  playPauseBtn.onclick = togglePlayPause;
+  nextBtn.onclick = playNext;
+  prevBtn.onclick = playPrev;
+  shuffleBtn.onclick = toggleShuffle;
+  audio.onended = playNext;
+
+  loadTracks();
+</script>
+</body>
+</html>
